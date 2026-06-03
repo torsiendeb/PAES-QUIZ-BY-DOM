@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAES Reviewer - AB Engineering Licensure Exam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #f8fafc; /* Slate 50 */
+        }
+        .option-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-card:hover:not(.disabled) {
+            transform: translateY(-2px);
+            background-color: #1e293b; /* Slate 800 */
+            border-color: #38bdf8; /* Sky 400 */
+        }
+        .option-selected {
+            background-color: #0369a1 !important; /* Sky 700 */
+            border-color: #38bdf8 !important; /* Sky 400 */
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        }
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 sm:p-8">
+
+    <!-- Header -->
+    <header class="w-full max-w-4xl flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-sky-400">PAES Reviewer</h1>
+            <p class="text-slate-400 text-sm mt-1">Agricultural & Biosystems Engineering</p>
+        </div>
+        <div id="progress-text" class="hidden text-slate-300 font-semibold bg-slate-800 px-4 py-2 rounded-full shadow-inner">
+            1 / 100
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-4xl flex-1 flex flex-col relative">
+        
+        <!-- Screen 1: Start Menu -->
+        <section id="start-screen" class="flex flex-col items-center justify-center flex-1 text-center fade-in mt-10">
+            <div class="bg-slate-800 p-8 sm:p-12 rounded-2xl shadow-2xl border border-slate-700 max-w-2xl w-full">
+                <svg class="w-16 h-16 mx-auto text-sky-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <h2 class="text-3xl font-bold mb-4 text-white">Licensure Exam Mock Test</h2>
+                <p class="text-slate-400 mb-8 leading-relaxed">
+                    Test your knowledge with 100 multiple-choice questions extracted directly from <strong>Exam 1</strong> of the PAES Reviewer.<br><br>
+                    Focus is key. Select an answer for each question to proceed. Your results and the answer key will be revealed at the end to maximize active recall.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button onclick="startExam(false)" class="bg-sky-600 hover:bg-sky-500 text-white font-semibold py-3 px-8 rounded-xl transition duration-200 shadow-lg shadow-sky-900">
+                        Start Exam (In Order)
+                    </button>
+                    <button onclick="startExam(true)" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-8 rounded-xl transition duration-200 shadow-lg">
+                        Shuffle Questions
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Screen 2: Exam Area -->
+        <section id="exam-screen" class="hidden flex-col flex-1 fade-in">
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-800 rounded-full h-2.5 mb-8 border border-slate-700">
+                <div id="progress-bar" class="bg-sky-400 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-700 mb-6">
+                <h3 id="question-text" class="text-lg sm:text-xl font-semibold leading-relaxed mb-6 text-white">
+                    <!-- Question populates here -->
+                </h3>
+                
+                <div id="options-container" class="space-y-3">
+                    <!-- Options populate here -->
+                </div>
+            </div>
+
+            <!-- Navigation Controls -->
+            <div class="flex justify-between items-center mt-auto pb-4">
+                <button id="btn-prev" onclick="navigate(-1)" class="px-6 py-3 rounded-xl font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Previous
+                </button>
+                <button id="btn-next" onclick="navigate(1)" class="px-6 py-3 rounded-xl font-semibold text-white bg-sky-600 hover:bg-sky-500 shadow-lg shadow-sky-900 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Next
+                </button>
+                <button id="btn-submit" onclick="submitExam()" class="hidden px-8 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-900 transition">
+                    Submit Exam
+                </button>
+            </div>
+        </section>
+
+        <!-- Screen 3: Results Area -->
+        <section id="results-screen" class="hidden flex-col flex-1 fade-in pb-12">
+            <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 mb-8 text-center">
+                <h2 class="text-3xl font-bold mb-2 text-white">Exam Completed!</h2>
+                <p class="text-slate-400 mb-6">Here is how you performed.</p>
+                
+                <div class="inline-flex items-center justify-center w-40 h-40 rounded-full border-8 border-slate-700 bg-slate-900 mb-6 relative">
+                    <span id="score-display" class="text-4xl font-bold text-sky-400">0/0</span>
+                </div>
+                <p id="feedback-message" class="text-lg font-medium text-slate-300 mb-8"></p>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button onclick="restartExam(false)" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-8 rounded-xl transition shadow-lg">
+                        Try Again (Same Order)
+                    </button>
+                    <button onclick="restartExam(true)" class="bg-sky-600 hover:bg-sky-500 text-white font-semibold py-3 px-8 rounded-xl transition shadow-lg shadow-sky-900">
+                        Shuffle & Try Again
+                    </button>
+                </div>
+            </div>
+
+            <!-- Detailed Review -->
+            <h3 class="text-2xl font-bold mb-6 text-white border-b border-slate-700 pb-2">Detailed Review</h3>
+            <div id="review-container" class="space-y-6">
+                <!-- Review cards populate here -->
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 100 Questions Extracted from PAES Reviewer (Exam 1)
+        const sourceQuestions = [
+            { q: "Implement consisting of long, flat and curved teeth made of spring steel.", options: ["Roller-harrow", "Disc harrow", "Spring-tooth harrow", "Spike-tooth harrow"], ans: 2 },
+            { q: "PAES 151:2010 Agricultural Machinery Specifications", options: ["Power Sprayer for Mango", "Sugarcane Planter", "Spring-tooth Harrow", "Mechanical Rice Transplanter"], ans: 3 },
+            { q: "Type of field cultivator wherein main frame is mounted on the front of the tractor.", options: ["Three-point hitch mounted", "Field cultivator", "Front mounted", "Drawn type cultivator"], ans: 2 },
+            { q: "Machine designed for transplanting rice seedlings into a puddled and leveled field.", options: ["Transplanting", "Transplanting arm", "Mechanical rice transplanter", "Human transplanting"], ans: 2 },
+            { q: "Total force parallel to the direction of travel required to move the implement.", options: ["Draft", "Drawbar horsepower", "Implement", "Drawbar power"], ans: 0 },
+            { q: "Based on PAES 117: 2000 small engine methods of test, how many hours shall the engine run continuously with continuous speed and power specified by the manufacturer?", options: ["Four", "Three", "Five", "Six"], ans: 2 },
+            { q: "Implement performing shallow post-plant tillage to aid the crop by loosening the soil and/or by mechanical eradication of undesired vegetation.", options: ["Continuous-tool bar cultivator", "Field cultivator", "Cultivating tillage implement", "Separated gang cultivator"], ans: 2 },
+            { q: "Implement consisting of tool bars that extend across the top of the rows, which allow lateral adjustments of the tools for different row spacing.", options: ["Continuous-tool bar cultivator", "Field cultivator", "Cultivating tillage implement", "Separated gang cultivator"], ans: 0 },
+            { q: "Implement consisting of tool bars that drop down between the rows to provide maximum vertical clearance for the plants.", options: ["Continuous-tool bar cultivator", "Field cultivator", "Cultivating tillage implement", "Separated gang cultivator"], ans: 3 },
+            { q: "Based on PAES Walking-type Agricultural Tractor (rotary tilling-type), the noise emitted by the tractor measured 50 mm away from the operator's ear level shall not be more than?", options: ["94 db (A)", "98 db (A)", "96 db (A)", "92 db (A)"], ans: 3 },
+            { q: "Soil-handling implements which forms uniform ridges of soil to predetermined shapes", options: ["Coulter", "Bed shaper", "Blade", "Hitch"], ans: 1 },
+            { q: "Soil-working tool, consisting of an edge and a surface, which is primarily designed to cut through the soil.", options: ["Coulter", "Draft", "Blade", "Hitch"], ans: 2 },
+            { q: "Circular, flat tool used to cut plant material and soil.", options: ["Coulter", "Bed shaper", "Blade", "Hitch"], ans: 0 },
+            { q: "Force to propel an implement in the direction of travel which is equal and opposite to drawbar pull.", options: ["Coulter", "Draft", "Blade", "Hitch"], ans: 1 },
+            { q: "Portion of an implement designed to connect the implement to a power source.", options: ["Coulter", "Draft", "Blade", "Hitch"], ans: 3 },
+            { q: "Miniature plow attachment whose purpose is to turn over a small furrow slice directly ahead of the main moldboard plow bottom, to aid in covering trash.", options: ["Coulter", "Jointer", "Blade", "Hitch"], ans: 1 },
+            { q: "Soil profile modified by tillage or amendments for use by plant roots", options: ["Root zone", "Land", "Seedbed", "Root bed"], ans: 3 },
+            { q: "PAES 124: 2002 walking-type agricultural tractor Part 3: special type (float-assist tiller), what is the recommended peak transmission efficiency of the tractor?", options: ["90%", "85%", "80%", "95%"], ans: 0 },
+            { q: "Part of the soil profile exploited by the roots of plants.", options: ["Root zone", "Seedbed", "Root bed", "Head land"], ans: 0 },
+            { q: "Soil zone which affects germination and emergence of seeds.", options: ["Root zone", "Land", "Seedbed", "Root bed"], ans: 2 },
+            { q: "Based on PAES 118: 2001 four-wheel tractor, the tractor shall be able to pull field implements up to what speed?", options: ["8 km/h", "10 km/h", "12 km/h", "14 km/h"], ans: 0 },
+            { q: "Tillage in which a narrow curved shank is used.", options: ["Anchoring", "Ridging", "Listing", "Chisel plowing"], ans: 3 },
+            { q: "Component of the power sprayer used to regulate the pressure.", options: ["Automatic switch valve", "Cut-off valve", "Solenoid valve", "Pressure relief valve"], ans: 3 },
+            { q: "Type of force type hand pump that discharges water only on the forward stroke of the piston or plunger and draw in water into the cylinder during the back stroke.", options: ["Single acting", "Force type", "Double acting", "Lift type"], ans: 0 },
+            { q: "Type of power sprayer mounted on wheels, either pushed by an operator or towed by a vehicle. The pump can be powered by an engine or an electric motor.", options: ["Wheel frame power sprayer", "Wheel-mounted power sprayer", "Power sprayer", "Frame mounted power sprayer"], ans: 1 },
+            { q: "PAES 159:2011 Agricultural Machinery Specifications", options: ["Power Sprayer for Mango", "Sugarcane Planter", "Spring-tooth Harrow", "Mechanical Rice Transplanter"], ans: 1 },
+            { q: "Sugarcane stalks containing buds used as planting mat.", options: ["Feeding shank", "Sugarcane billet plant", "Sugarcane plant", "Sugarcane billet"], ans: 3 },
+            { q: "Based on PAES119: 2001 four-wheel tractor methods of test, what is the recommended noise emitted by the tractor measured 50 mm away from the operator's ear level?", options: ["Shall be more than 92 db (A)", "Shall not be more than 92 db (A)", "Shall be lesser than 92 db (A)", "Shall be exactly 92 db (A)"], ans: 1 },
+            { q: "Operation which pulverizes, smoothens, and makes the soil ready for planting.", options: ["Harrowing", "Middlebreaking", "Incorporating", "Off barring"], ans: 0 },
+            { q: "Based on PAES 132: 2004 Disc/Moldboard Plow Methods of Test, what is the required travelling speed during operation for two-wheel tractor-drawn plows?", options: ["2 kph to 3 kph", "3 kph to 4 kph", "5 kph to 6 kph", "8 kph to 9 kph"], ans: 1 },
+            { q: "Operation wherein a lister is used in a manner that forms a furrow midway between two previous rows of plants", options: ["Harrowing", "Middlebreaking", "Incorporating", "Off barring"], ans: 1 },
+            { q: "Plow bottom that has less curvature than the stubble and can be used easily for stubble, ordinary trash and stalk cover land.", options: ["General-purpose moldboard", "Stubble moldboard", "Slatted moldboard", "Moldboard plow"], ans: 0 },
+            { q: "Plow bottom that has long, narrow and less sloping moldboard with a gradual twist that allows complete inversion of the furrow slice with minimum breakage.", options: ["Share", "Stubble moldboard", "Plow bottom", "Sod moldboard"], ans: 3 },
+            { q: "Working part of the plow which includes the share, moldboard, and landside, all attached to the frog.", options: ["Share", "Moldboard plow", "Plow bottom", "Sod moldboard"], ans: 2 },
+            { q: "What type of field operation pattern?", options: ["Headland pattern turn strips each end", "Headland pattern from boundaries", "Headland alternation pattern", "Headland strips alternation pattern"], ans: 1 },
+            { q: "Type of plow mounted on the tractor's three-point linkage and depends upon the tractor for its general operation.", options: ["Trailing moldboard plow", "Tractor-mounted moldboard plow", "Tractor-mounted reversible disc plow", "Semi-mounted moldboard plow"], ans: 1 },
+            { q: "Type of plow hitched to the drawbar or lower links of the tractor, supported by two or three wheels and equipped with hydraulic lines and cylinders for lifting and/or depth control.", options: ["Semi-mounted reversible disc plow", "Trailing moldboard plow", "Tractor-mounted reversible disc plow", "Semi-mounted moldboard plow"], ans: 1 },
+            { q: "Based on PAES 112: 2000 Lever-Operated Knapsack Sprayer, the overall weight of the sprayer with its component parts, when fully loaded with water shall not exceed how many kilograms?", options: ["12", "16", "22", "25"], ans: 2 },
+            { q: "Serves as an adaptor of the drill bit and conduit of water jet channel.", options: ["Drilling rig", "Drilling pipe", "Drill bit", "AOTA"], ans: 1 },
+            { q: "A type of drilling rig in which the mode of drilling is done by using a rotating drill bit that cut and loosen the soil thus producing a hole of required diameter.", options: ["Rotary", "Percussion", "Combination", "AOTA"], ans: 0 },
+            { q: "A type of drilling rig in which the mode of drilling is done by alternately raising and dropping either an external weight or the drilling stem itself, causing the impact of the drill bit to the soil.", options: ["Rotary", "Percussion", "Combination", "AOTA"], ans: 1 },
+            { q: "Based on PAES 118: 2001 four-wheel tractor, what is the allowable wheel slip for maximum efficiency for two-wheel drive tractor at tilled or soft soil.", options: ["20-40", "10-20", "10-15", "10-30"], ans: 2 },
+            { q: "A type of drilling rig in which the mode of drilling is done by rotary action and percussion.", options: ["Rotary", "Percussion", "Combination", "AOTA"], ans: 2 },
+            { q: "Type of hand pump intended for use in lifting water from low-head cisterns and wells, the depth of which is not beyond the head furnished by atmospheric pressure.", options: ["Single acting", "Lift type", "Double acting", "Force type"], ans: 1 },
+            { q: "Part of granule applicator where granules are loaded.", options: ["Hopper", "Agitator", "Granule", "Granule applicator"], ans: 0 },
+            { q: "PAES 163:2011 agricultural machinery specifications", options: ["Power sprayer for mango", "Sugarcane planter", "Spring-tooth harrow", "Mechanical rice transplanter"], ans: 2 },
+            { q: "PAES 166:2011 Agricultural Machinery Methods of Test", options: ["Subsoiler", "Hand Pump", "Granule Applicator", "Mist Blower"], ans: 2 },
+            { q: "Secondary tillage implement consisting of long and curved teeth made of spring steel which are fastened on the transverse toolbars with the other end pointed to give good soil penetration.", options: ["Trailing spring-tooth harrow", "Harrowing", "Spring-tooth harrow", "Auger head/drill bit"], ans: 2 },
+            { q: "Four-wheel tractor speed limit on paved road in kph.", options: ["15 to 22", "15 to 20", "14 to 26", "8 to 15"], ans: 1 },
+            { q: "Based on PAES 112: 2000 Lever-Operated Knapsack Sprayer, the flow rate from the nozzle using water and the nozzles provided, shall lie in the range of 0.3 to 1.4 L/min. at what mean pressure?", options: ["100 kPa", "300 kPa", "400 kPa", "200 kPa"], ans: 1 },
+            { q: "Tillage of an entire area as contrasted to a partial tillage as in bands or strips.", options: ["Deep tillage", "Broadcast tillage", "Rotary tillage", "Oriented tillage"], ans: 1 },
+            { q: "Tillage action and transport operations utilized to loosen, load, carry, and unload soil.", options: ["Earthmoving", "Land grading", "Land forming", "Land planning"], ans: 0 },
+            { q: "PAES 128: 2002 drilling rig methods of test, the drilling rig shall be operated for at least 100 mm diameter of bore hole and minimum depth of how many meters?", options: ["10", "20", "30", "40"], ans: 2 },
+            { q: "Tillage operation which move soil to establish a desired soil elevation and slope.", options: ["Land grading", "Land forming", "Land planning", "Soil cultivation"], ans: 0 },
+            { q: "Tillage operation which are oriented in specific paths or directions with respect to the sun, prevailing winds, previous tillage actions, or field base lines.", options: ["Deep tillage", "Broadcast tillage", "Rotary tillage", "Oriented tillage"], ans: 3 },
+            { q: "Shallow tillage operation performed to promote growth of crop plants by creating a soil condition conducive to aeration, infiltration, and moisture conservation or to pest control.", options: ["Earthmoving", "Land forming", "Land planning", "Soil cultivation"], ans: 3 },
+            { q: "Mechanical manipulation of soil for any desired purpose.", options: ["Precision tillage", "Conventional tillage", "Tillage", "Mulch tillage"], ans: 2 },
+            { q: "Based on PAES 124: 2002 walking-type agricultural tractor Part 3: special type (float-assist tiller), what is the recommended noise emitted by the tractor measured 50 mm away from the operator's ear level?", options: ["Shall be more than 92 db (A)", "Shall be exactly 92 db (A)", "Shall not be more than 92 db (A)", "Shall be lesser than 92 db (A)"], ans: 2 },
+            { q: "What type of field operation pattern?", options: ["Continuous pattern turn strips each end", "Continuous pattern from boundaries", "Continuous alternation pattern", "Continuous strips alternation pattern"], ans: 0 },
+            { q: "Tillage, which constitutes the initial major soil-working operation, normally designed to reduce soil strength, cover plant materials, and rearrange aggregates.", options: ["Secondary tillage", "Primary tillage", "Ridge tillage", "Conservation tillage"], ans: 1 },
+            { q: "Tillage, following primary tillage, which is designed to control weed growth and to create specific soil surface configurations before seeding.", options: ["Precision tillage", "Secondary tillage", "Minimum tillage", "Primary tillage"], ans: 1 },
+            { q: "System traditionally performed in preparing a seedbed for a given crop and grown in a given geographical area.", options: ["Precision tillage", "Secondary tillage", "Minimum tillage", "Conventional tillage"], ans: 3 },
+            { q: "What type of field operation pattern?", options: ["Overlapping alternation pattern", "Overlapping pattern from boundaries", "Overlapping alternation strip pattern", "Overlapping alternation pattern"], ans: 0 },
+            { q: "System wherein least soil manipulation is performed.", options: ["Precision tillage", "Secondary tillage", "Minimum tillage", "Conventional tillage"], ans: 2 },
+            { q: "System in which tillage of the total soil surface is performed in such a way that plant residue is specifically left on or near the soil surface.", options: ["Precision tillage", "Optimum tillage", "Primary tillage", "Mulch tillage"], ans: 3 },
+            { q: "Implement which shatters the soil without complete burial or mixing of surface materials.", options: ["Moldboard plow", "Spiral plow", "Chisel plow", "Rotary plow"], ans: 2 },
+            { q: "Implement which cuts, partially or completely inverts a layer of soil to bury surface materials, and pulverizes the soil.", options: ["Row crop cultivator", "Roller-harrow", "Moldboard plow", "Rotary hoe"], ans: 2 },
+            { q: "Tool attached to the shank of the subsoiler to cut through the soil.", options: ["Soil abrasion", "Subsoiler", "Shank", "Ripper point"], ans: 2 },
+            { q: "Series of hills in a field.", options: ["Root-washed seedlings", "Rows", "Hills", "Soil-bearing seedlings"], ans: 1 },
+            { q: "Scratching, cutting, or abrasing of materials caused by the action of soil.", options: ["Soil abrasion", "Subsoiler", "Shank", "Ripper point"], ans: 0 },
+            { q: "Lever that connects the pump rod to the pump head which often includes some mechanism to add counterweight to balance the weight of the water being lifted up the draw pipe.", options: ["Handle", "Plunger/piston", "Pump stand/pedestal", "Pump rod/plunger rod"], ans: 0 },
+            { q: "Part of the mist blower that connects the nozzle to the blower.", options: ["Mounted mist", "Mist", "Backpack mist", "Wand"], ans: 3 },
+            { q: "Part of the cylinder that is connected to the pump rod and which forces water up the draw pipe.", options: ["Hand pump", "Plunger/piston", "Pump stand/pedestal", "Pump rod/plunger rod"], ans: 1 },
+            { q: "Type of sugarcane planter that is capable of chopping sugarcanes into billets which are dropped into the furrows.", options: ["Manual sugarcane planter", "Mechanical sugarcane planter", "Semi-automatic sugarcane planter", "Sugarcane planter"], ans: 2 },
+            { q: "Based on PAES 118: 2001 four-wheel tractor, what is the allowable wheel slip for maximum efficiency for two-wheel drive tractor at firm soil.", options: ["5-10%", "7-11%", "12-18%", "10-20%"], ans: 1 },
+            { q: "Eliminates back and dead furrows and is used for surface irrigation.", options: ["Subsoiler", "Disc plow", "Roller-harrow", "Two-way plow"], ans: 3 },
+            { q: "Implement for intermittent tillage at depths sufficient to shatter compacted subsurface layers.", options: ["Subsoiler", "Disc plow", "Roller-harrow", "Two-way plow"], ans: 0 },
+            { q: "Based on PAES 112: 2000 Lever-Operated Knapsack Sprayer Method of test, the pumping rate shall not exceed how many strokes/min?", options: ["10", "25", "30", "40"], ans: 3 },
+            { q: "Consists of two gangs wherein one gang is located behind the other at an angle and the harrow is operated in an offset position in relation to the tractor.", options: ["Roller-harrow", "Offset disc harrow", "Spring-tooth harrow", "Single-action disc harrow"], ans: 1 },
+            { q: "Implement used for seedbed preparation which crushes soil clods and smooths and firms the soil surface.", options: ["Row crop cultivator", "Roller-harrow", "Packer", "Rotary hoe"], ans: 1 },
+            { q: "Based on PAES 118: 2001 four-wheel tractor, what is the allowable wheel slip for maximum efficiency for four-wheel drive tractor at tilled or soft soil.", options: ["15-21", "10-30", "18-25", "8-13"], ans: 3 },
+            { q: "What type of field operation pattern?", options: ["Circuitous pattern turn strips at corner diagonals", "Circuitous pattern rounded corners", "Circuitous pattern from back furrow", "Circuitous pattern square corners"], ans: 1 },
+            { q: "Implement wherein the frame and cultivating tools are designed to adequately pass through standing crop rows without crop damage.", options: ["Row crop cultivator", "Roller-harrow", "Packer", "Rotary hoe"], ans: 0 },
+            { q: "Machine used to apply, or to apply and incorporate soil additives by means of tillage.", options: ["Soil-additive applicator", "Soil-additive incorporator", "Soil roller", "Soil-working surface"], ans: 1 },
+            { q: "Based on PAES 132: 2004 Disc/Moldboard Plow Methods of Test, what is the required travelling speed during operation for four-wheel tractor-drawn plows?", options: ["3 kph to 6 kph", "10 kph to 12 kph", "8 kph to 9 kph", "5 kph to 6 kph"], ans: 3 },
+            { q: "Portions of tillage tools which are designed to be in contact with the soil.", options: ["Soil-additive applicator", "Soil-additive incorporator", "Soil roller", "Soil-working surface"], ans: 3 },
+            { q: "Tillage tools which present a reasonable constant boundary area to the soil.", options: ["Multi-powered tillage tools", "Soil abrasion", "Soil adhesion", "Mechanical impedance"], ans: 2 },
+            { q: "Scratching, cutting, or abrading of materials caused by the action of soil.", options: ["Multi-powered tillage tools", "Soil abrasion", "Soil adhesion", "Mechanical impedance"], ans: 1 },
+            { q: "Resistance to the movement of plant parts or tillage tools through soil that is caused by the mechanical strength of the soil.", options: ["Multi-powered tillage tools", "Soil abrasion", "Soil adhesion", "Mechanical impedance"], ans: 3 },
+            { q: "PAES 160:2011 Agricultural Machinery Specifications", options: ["Power Sprayer for Mango", "Sugarcane Planter", "Spring-tooth Harrow", "Mechanical Rice Transplanter"], ans: 3 },
+            { q: "Type of soil auger that makes use of human force to drill the soil.", options: ["Motor-powered", "Soil boring auger", "Fluid-powered", "Hand-operated type"], ans: 3 },
+            { q: "PAES 155:2010 Agricultural Machinery Methods of Test", options: ["Subsoiler", "Hand Pump", "Granule Applicator", "Mist Blower"], ans: 3 },
+            { q: "Fine drops of liquid, such as water or chemical pesticide, sprayed into the air.", options: ["Wand", "Mist", "Backpack mist", "Mounted mist"], ans: 1 },
+            { q: "Type of soil auger that is powered by either pneumatic or hydraulic pump to drill the soil.", options: ["Motor-powered", "Soil boring auger", "Fluid-powered", "Hand-operated type"], ans: 2 },
+            { q: "PAES 162:2011 agricultural machinery methods of test", options: ["Power sprayer for mango", "Hand pump", "Granule applicator", "Soil auger"], ans: 3 },
+            { q: "Type of granule applicator designed for handheld operation. It makes use of screw or spinner plate operated manually to facilitate metering of granules.", options: ["Orifice", "Handheld granule applicator", "Spinner plate", "Granule applicator"], ans: 1 },
+            { q: "Raised ridge left at the center of the strip of land, when plowing is started from center to side.", options: ["Back furrow", "Furrow slice", "Furrow crown", "Dead furrow"], ans: 0 },
+            { q: "Trench left when the plow bottom cuts and turns the furrow slice.", options: ["Back furrow", "Furrow crown", "Furrow", "Dead furrow"], ans: 2 },
+            { q: "What type of field operation pattern?", options: ["Circuitous pattern turn strips at corner diagonals", "Headland pattern rounded corners", "Headland pattern from back furrow", "Circuitous pattern square corners"], ans: 2 },
+            { q: "Sliding implement that cuts, lifts, inverts and throws to one side a layer of soil (furrow slice) to bury surface materials.", options: ["Slatted moldboard", "Moldboard plow", "Plow bottom", "Sod moldboard"], ans: 1 }
+        ];
+
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // stores selected option index for each question
+
+        // Elements
+        const startScreen = document.getElementById('start-screen');
+        const examScreen = document.getElementById('exam-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        // Logic
+        function startExam(shuffle) {
+            questions = [...sourceQuestions];
+            if (shuffle) {
+                questions = shuffleArray(questions);
+            }
+            
+            // Map original indices so we know what they were (optional but good for tracking)
+            userAnswers = new Array(questions.length).fill(null);
+            currentQuestionIndex = 0;
+
+            startScreen.classList.add('hidden');
+            resultsScreen.classList.add('hidden');
+            examScreen.classList.remove('hidden');
+            progressText.classList.remove('hidden');
+            examScreen.classList.add('flex');
+
+            renderQuestion();
+        }
+
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function renderQuestion() {
+            const currentQ = questions[currentQuestionIndex];
+            
+            // Update Progress
+            progressText.innerText = `${currentQuestionIndex + 1} / ${questions.length}`;
+            progressBar.style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+
+            // Setup text
+            questionText.innerText = `${currentQuestionIndex + 1}. ${currentQ.q}`;
+
+            // Render Options
+            optionsContainer.innerHTML = '';
+            currentQ.options.forEach((opt, idx) => {
+                const isSelected = userAnswers[currentQuestionIndex] === idx;
+                
+                const optBtn = document.createElement('button');
+                optBtn.className = `w-full text-left p-4 rounded-xl border-2 cursor-pointer option-card focus:outline-none flex items-center gap-3 ${isSelected ? 'option-selected' : 'bg-slate-700/50 border-slate-600 text-slate-200'}`;
+                
+                optBtn.onclick = () => selectOption(idx);
+
+                const letter = String.fromCharCode(65 + idx); // A, B, C, D
+                
+                optBtn.innerHTML = `
+                    <div class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold ${isSelected ? 'bg-sky-400 text-slate-900' : 'bg-slate-600 text-slate-300'}">
+                        ${letter}
+                    </div>
+                    <span class="flex-1 font-medium">${opt}</span>
+                `;
+                optionsContainer.appendChild(optBtn);
+            });
+
+            // Handle Buttons
+            btnPrev.disabled = currentQuestionIndex === 0;
+            
+            // Force user to select an answer before proceeding
+            const hasAnswered = userAnswers[currentQuestionIndex] !== null;
+            
+            if (currentQuestionIndex === questions.length - 1) {
+                btnNext.classList.add('hidden');
+                btnSubmit.classList.remove('hidden');
+                btnSubmit.disabled = !hasAnswered;
+                if(!hasAnswered){
+                    btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    btnSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } else {
+                btnNext.classList.remove('hidden');
+                btnSubmit.classList.add('hidden');
+                btnNext.disabled = !hasAnswered;
+            }
+        }
+
+        function selectOption(optIndex) {
+            userAnswers[currentQuestionIndex] = optIndex;
+            renderQuestion(); // Re-render to show selection
+        }
+
+        function navigate(dir) {
+            currentQuestionIndex += dir;
+            if (currentQuestionIndex < 0) currentQuestionIndex = 0;
+            if (currentQuestionIndex >= questions.length) currentQuestionIndex = questions.length - 1;
+            renderQuestion();
+        }
+
+        function submitExam() {
+            examScreen.classList.add('hidden');
+            examScreen.classList.remove('flex');
+            progressText.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+            resultsScreen.classList.add('flex');
+
+            calculateAndRenderResults();
+        }
+
+        function calculateAndRenderResults() {
+            let score = 0;
+            const reviewContainer = document.getElementById('review-container');
+            reviewContainer.innerHTML = '';
+
+            questions.forEach((q, idx) => {
+                const userAns = userAnswers[idx];
+                const isCorrect = userAns === q.ans;
+                if (isCorrect) score++;
+
+                // Build review card (Color coding for active recall)
+                const card = document.createElement('div');
+                card.className = `p-6 rounded-xl border-l-8 shadow-lg ${isCorrect ? 'bg-emerald-900/20 border-emerald-500' : 'bg-red-900/20 border-red-500'}`;
+                
+                let optionsHtml = '';
+                q.options.forEach((opt, optIdx) => {
+                    const isActualCorrect = optIdx === q.ans;
+                    const isUserSelected = optIdx === userAns;
+                    
+                    let optStyle = "text-slate-400";
+                    let icon = `<span class="w-5 inline-block"></span>`; // spacing
+
+                    if (isActualCorrect) {
+                        optStyle = "text-emerald-400 font-bold bg-emerald-900/30 px-3 py-1 rounded";
+                        icon = `<svg class="w-5 h-5 text-emerald-400 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                    } else if (isUserSelected && !isActualCorrect) {
+                        optStyle = "text-red-400 line-through bg-red-900/30 px-3 py-1 rounded";
+                        icon = `<svg class="w-5 h-5 text-red-400 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+                    } else {
+                        optStyle = "px-3 py-1";
+                        icon = `<span class="w-5 inline-block mr-2"></span>`;
+                    }
+
+                    const letter = String.fromCharCode(65 + optIdx);
+                    optionsHtml += `
+                        <div class="mb-2 flex items-center">
+                            ${icon}
+                            <span class="${optStyle}"><span class="mr-2 opacity-50">${letter}.</span> ${opt}</span>
+                        </div>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div class="flex items-start gap-3 mb-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}">${idx + 1}</span>
+                        <h4 class="text-white font-medium leading-relaxed pt-1">${q.q}</h4>
+                    </div>
+                    <div class="ml-11">
+                        ${optionsHtml}
+                    </div>
+                `;
+                reviewContainer.appendChild(card);
+            });
+
+            // Update Score Header
+            const percentage = Math.round((score / questions.length) * 100);
+            document.getElementById('score-display').innerText = `${score}`;
+            
+            const feedbackEl = document.getElementById('feedback-message');
+            if (percentage >= 80) {
+                feedbackEl.innerText = `Excellent work! You scored ${percentage}%.`;
+                feedbackEl.className = "text-lg font-medium text-emerald-400 mb-8";
+            } else if (percentage >= 50) {
+                feedbackEl.innerText = `Good effort! You scored ${percentage}%. Keep studying.`;
+                feedbackEl.className = "text-lg font-medium text-amber-400 mb-8";
+            } else {
+                feedbackEl.innerText = `Needs improvement. You scored ${percentage}%. Review the material below!`;
+                feedbackEl.className = "text-lg font-medium text-red-400 mb-8";
+            }
+        }
+
+        function restartExam(shuffle) {
+            window.scrollTo(0, 0);
+            startExam(shuffle);
+        }
+    </script>
+</body>
+</html>
